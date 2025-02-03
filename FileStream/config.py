@@ -36,7 +36,8 @@ class Server:
     # URL = "http{}://{}{}/".format(
     #     "s" if HAS_SSL else "", FQDN, "" if NO_PORT else ":" + str(PORT)
     # )
-    URL = "https://filetolinktelegram.onrender.com/"
+    # URL = "https://filetolinktelegram.onrender.com/"
+    URL = str(env.get("URL", "https://afnan-file-to-link.koyeb.app/"))
 
 
 
