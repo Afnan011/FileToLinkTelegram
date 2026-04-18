@@ -788,35 +788,58 @@ async function switchSub(idx){
         const lbl=track.label||(track.language&&langName(track.language))||`Sub ${idx+1}`;
         toast(`💬 ${lbl}`);
     } else {
-        /* fetch VTT via browser <track> streaming */
-        toast('💬 Streaming subtitle…');
-        const oldTrack = document.getElementById('remote_sub');
-        if(oldTrack) oldTrack.remove();
-        if(activeCueTrack){ activeCueTrack.removeEventListener('cuechange',onCue); activeCueTrack=null; }
-
-        const tEl = document.createElement('track');
-        tEl.id = 'remote_sub';
-        tEl.kind = 'subtitles';
-        tEl.src = `/sub/${FILE_ID}/${idx}.vtt`;
-        tEl.default = true;
-        vid.appendChild(tEl);
-
-        /* Wait for track to be parsed by browser */
-        tEl.addEventListener('load', ()=>{ toast('✅ Subtitles streaming'); });
-        tEl.addEventListener('error', ()=>{ toast('⚠️ Subtitle stream failed'); });
-
-        /* We need to hook into the newly created TextTrack object on the video */
-        const checkTrack = setInterval(()=>{
-            const trackList = Array.from(vid.textTracks||[]);
-            const match = trackList.find(t=>t.kind==='subtitles' && (!t.label || t.label==='')); // our temp track
-            if(match){
-                clearInterval(checkTrack);
-                match.mode = 'hidden'; // hide default browser renderer
-                activeCueTrack = match;
-                match.addEventListener('cuechange', onCue);
-            }
-        }, 100);
-        setTimeout(()=>clearInterval(checkTrack), 5000); // safety clear
+        /* fetch VTT from server progressively via Streams API */
+        toast('💬 Connecting subtitle stream…');
+        subCues = [];
+        try {
+            const r = await fetch(`/sub/${FILE_ID}/${idx}.vtt`);
+            if(!r.ok) throw new Error('bad response');
+            
+            const reader = r.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            
+            (async function processStream() {
+                try {
+                    while(curSub === idx) {
+                        const {done, value} = await reader.read();
+                        if(value) {
+                            buffer += decoder.decode(value, {stream: true});
+                            // Normalize newlines and split by blank lines
+                            buffer = buffer.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+                            let blocks = buffer.split(/\n{2,}/);
+                            
+                            // The last block might be incomplete, keep it in the buffer
+                            buffer = blocks.pop() || '';
+                            
+                            for(const blk of blocks) {
+                                const lines = blk.trim().split('\n');
+                                const ai = lines.findIndex(l => l.includes('-->'));
+                                if(ai < 0) continue;
+                                const [sStr, eStr] = lines[ai].split('-->');
+                                const s = vtime(sStr.trim().split(/\s/)[0]);
+                                const e = vtime(eStr.trim().split(/\s/)[0]);
+                                if(isNaN(s) || isNaN(e)) continue;
+                                
+                                const txt = lines.slice(ai+1).join('\n')
+                                    .replace(/<\d+:\d+:\d+\.\d+>/g,'')
+                                    .replace(/<c[.\w]*>|<\/c>/g,'')
+                                    .replace(/<[^>]+>/g,'').trim();
+                                    
+                                if(txt) subCues.push({s, e, t: txt});
+                            }
+                        }
+                        if(done) break;
+                    }
+                } catch(e) {
+                    console.error("Sub stream error", e);
+                }
+            })();
+            toast(`✅ Subtitle stream active`);
+        } catch(e) {
+            subCues = null;
+            toast('⚠️ Subtitle stream failed');
+        }
     }
 }
 
@@ -828,9 +851,20 @@ function onCue(){
         : '';
 }
 
-/* ── SUBTITLE OVERLAY (fallback) ── */
+/* ── SUBTITLE OVERLAY (fallback fetch mode) ── */
 function subOverlay(){
-    // no-op: onCue handles it exclusively now
+    if(subMode==='fetch' && subCues && subCues.length > 0){
+        const t = vid.currentTime;
+        // Optimization: binary search or just reverse find since subtitles are sorted
+        const c = subCues.find(x => t>=x.s && t<=x.e);
+        subTxt.innerHTML = c ? c.t.replace(/\n/g,'<br>') : '';
+    }
+}
+
+function vtime(s){
+    if(!s) return NaN;
+    const p=s.split(':').map(Number);
+    return p.length===3 ? p[0]*3600+p[1]*60+p[2] : p[0]*60+p[1];
 }
 function escH(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 

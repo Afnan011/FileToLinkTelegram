@@ -1,4 +1,4 @@
-﻿import time
+import time
 import json
 import math
 import logging
@@ -246,7 +246,7 @@ async def remux_handler(request: web.Request):
         file_url  = urllib.parse.urljoin(Server.URL, f'dl/{path}')
         file_info = await _db.get_file(path)
         raw_name  = (file_info.get('file_name', 'video') if file_info else 'video')
-        file_name = raw_name.rsplit('.', 1)[0] + '.mp4' if '.' in raw_name else raw_name + '.mp4'
+        file_name = raw_name.rsplit('.', 1)[0] + '.mkv' if '.' in raw_name else raw_name + '.mkv'
 
         cmd = ['ffmpeg', '-v', 'quiet']
         # Fast-seek BEFORE -i: FFmpeg translates to HTTP Range on the /dl/ stream.
@@ -260,8 +260,7 @@ async def remux_handler(request: web.Request):
             '-c:a', 'aac',                 # audio: transcode to AAC (EAC3/AC3 -> AAC)
             '-b:a', '192k',
             '-ac', '2',                    # downmix 5.1 -> stereo
-            '-movflags', 'frag_keyframe+empty_moov+default_base_moof',
-            '-f', 'mp4',
+            '-f', 'matroska',
             'pipe:1',
         ]
 
@@ -288,7 +287,7 @@ async def remux_handler(request: web.Request):
         return web.Response(
             body=body_generator(),
             headers={
-                'Content-Type':        'video/mp4',
+                'Content-Type':        'video/x-matroska',
                 'Content-Disposition': f'inline; filename="{file_name}"',
                 'X-Accel-Buffering':   'no',
                 'Cache-Control':       'no-cache',
