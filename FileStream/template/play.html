@@ -621,24 +621,35 @@ let activeCueTrack = null; // native TextTrack being listened to
 let curAudio   = 0;
 let curSub     = -1;
 
-/* Start API probe immediately (parallel, don't wait) */
+/* Start API probe immediately (parallel) */
 const apiPromise = fetch(`/api/tracks/${FILE_ID}`)
     .then(r=>r.ok?r.json():null)
     .catch(()=>null);
 
-/* Wait for loadedmetadata then init */
-async function initTracks(){
-    /* Wait for video to have metadata */
-    if(vid.readyState < 1){
-        await new Promise(r=>vid.addEventListener('loadedmetadata',r,{once:true}));
+/* Poll native audioTracks until we get tracks or give up */
+async function pollNativeAudio(maxMs=3000, interval=250){
+    const deadline = Date.now() + maxMs;
+    while(Date.now() < deadline){
+        const tracks = Array.from(vid.audioTracks||[]);
+        if(tracks.length > 1) return tracks;
+        await new Promise(r=>setTimeout(r, interval));
     }
-    /* Small delay — Chrome populates audioTracks/textTracks asynchronously */
-    await new Promise(r=>setTimeout(r,400));
+    return Array.from(vid.audioTracks||[]);
+}
+
+async function initTracks(){
+    /* Wait for metadata */
+    if(vid.readyState < 1)
+        await new Promise(r=>vid.addEventListener('loadedmetadata',r,{once:true}));
+
+    /* Run native poll + API fetch in parallel */
+    const [nativeAudio, apiData] = await Promise.all([
+        pollNativeAudio(3000, 300),
+        apiPromise,
+    ]);
 
     /* ── AUDIO ── */
-    const nativeAudio = Array.from(vid.audioTracks||[]);
     if(nativeAudio.length > 1){
-        /* Browser can see multiple tracks — use native switching (no remux needed) */
         audioMode='native';
         buildAudioUI(nativeAudio.map((t,i)=>({
             index:i,
@@ -646,23 +657,17 @@ async function initTracks(){
             language:t.language,
             codec:'',
         })));
+    } else if(apiData && apiData.audio && apiData.audio.length > 1){
+        audioMode='remux';
+        buildAudioUI(apiData.audio);
     } else {
-        /* Fall back to server FFprobe */
-        const api = await apiPromise;
-        if(api && api.audio && api.audio.length > 1){
-            audioMode='remux';
-            buildAudioUI(api.audio);
-        } else {
-            /* Single audio track */
-            document.getElementById('audioList').innerHTML=
-                '<div class="popup-msg">Single audio track</div>';
-        }
+        document.getElementById('audioList').innerHTML=
+            '<div class="popup-msg">Single audio track</div>';
     }
 
     /* ── SUBTITLES ── */
     const nativeSubs = Array.from(vid.textTracks||[])
         .filter(t=>t.kind==='subtitles'||t.kind==='captions');
-    /* Hide native browser rendering — we render as overlay */
     nativeSubs.forEach(t=>{ t.mode='hidden'; });
 
     if(nativeSubs.length > 0){
@@ -670,17 +675,14 @@ async function initTracks(){
         buildSubUI([{index:-1,label:'Off',type:'native'},
             ...nativeSubs.map((t,i)=>({index:i,label:t.label||(t.language&&langName(t.language))||`Sub ${i+1}`,type:'native'}))
         ]);
+    } else if(apiData && apiData.subtitles && apiData.subtitles.length > 0){
+        subMode='fetch';
+        buildSubUI([{index:-1,label:'Off',type:'fetch'},
+            ...apiData.subtitles.map((s,i)=>({...s,index:i,type:'fetch'}))
+        ]);
     } else {
-        const api = await apiPromise;
-        if(api && api.subtitles && api.subtitles.length > 0){
-            subMode='fetch';
-            buildSubUI([{index:-1,label:'Off',type:'fetch'},
-                ...api.subtitles.map((s,i)=>({...s,index:i,type:'fetch'}))
-            ]);
-        } else {
-            document.getElementById('subList').innerHTML=
-                '<div class="popup-msg">No subtitle tracks found</div>';
-        }
+        document.getElementById('subList').innerHTML=
+            '<div class="popup-msg">No subtitle tracks found</div>';
     }
 }
 
