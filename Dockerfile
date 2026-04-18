@@ -1,11 +1,12 @@
-FROM python:3.11
+FROM python:3.11-slim
 
 WORKDIR /app
-COPY . /app
 
-RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
+# Copy only requirements first for better layer caching
+COPY requirements.txt .
+RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
 
+# Copy the rest of the application
 COPY . .
 
 CMD ["python", "-m", "FileStream"]
