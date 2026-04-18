@@ -68,8 +68,37 @@ async def sts(b, m: Message):
         await m.reply_text(text=f"`{id}`** is not Banned** ", parse_mode=ParseMode.MARKDOWN, quote=True)
 
 
-@FileStream.on_message(filters.command("broadcast") & filters.private & filters.user(Telegram.OWNER_ID) & filters.reply)
+@FileStream.on_message(filters.command("broadcaststatus") & filters.private & filters.user(Telegram.OWNER_ID))
+async def broadcast_status(c: Client, m: Message):
+    if not broadcast_ids:
+        await m.reply_text("No active broadcast running.", quote=True)
+        return
+    lines = []
+    for bid, info in broadcast_ids.items():
+        pct = round((info['current'] / info['total']) * 100) if info['total'] else 0
+        lines.append(
+            f"**Broadcast `{bid}`**\n"
+            f"  Progress: {info['current']}/{info['total']} ({pct}%)\n"
+            f"  ✅ Success: {info['success']}  ❌ Failed: {info['failed']}"
+        )
+    await m.reply_text("\n\n".join(lines), quote=True)
+
+
+@FileStream.on_message(filters.command("broadcast") & filters.private & filters.user(Telegram.OWNER_ID))
 async def broadcast_(c, m):
+    # Must be a reply to the message you want to send
+    if not m.reply_to_message:
+        await m.reply_text(
+            text=(
+                "⚠️ **How to broadcast:**\n\n"
+                "1. Send the message you want to broadcast to all users.\n"
+                "2. **Reply to that message** with `/broadcast`\n\n"
+                "_Example: send a photo, then reply to it with /broadcast_"
+            ),
+            quote=True
+        )
+        return
+
     all_users = await db.get_all_users()
     broadcast_msg = m.reply_to_message
     while True:
@@ -77,7 +106,7 @@ async def broadcast_(c, m):
         if not broadcast_ids.get(broadcast_id):
             break
     out = await m.reply_text(
-        text=f"Broadcast initiated! You will be notified with log file when all the users are notified."
+        text=f"📢 Broadcast started! You'll be notified when done.\nUse `/broadcaststatus` to check progress."
     )
     start_time = time.time()
     total_users = await db.total_users_count()
@@ -116,7 +145,7 @@ async def broadcast_(c, m):
                     )
                 )
                 try:
-                    await out.edit_text(f"Broadcast Status\n\ncurrent: {done}\nfailed:{failed}\nsuccess: {success}")
+                    await out.edit_text(f"📢 Broadcasting…\n\nSent: {done}/{total_users}\n✅ Success: {success}  ❌ Failed: {failed}")
                 except:
                     pass
     if broadcast_ids.get(broadcast_id):
@@ -126,13 +155,13 @@ async def broadcast_(c, m):
     await out.delete()
     if failed == 0:
         await m.reply_text(
-            text=f"broadcast completed in `{completed_in}`\n\nTotal users {total_users}.\nTotal done {done}, {success} success and {failed} failed.",
+            text=f"✅ **Broadcast complete** in `{completed_in}`\n\nTotal: {total_users} | Success: {success} | Failed: {failed}",
             quote=True
         )
     else:
         await m.reply_document(
             document='broadcast.txt',
-            caption=f"broadcast completed in `{completed_in}`\n\nTotal users {total_users}.\nTotal done {done}, {success} success and {failed} failed.",
+            caption=f"✅ **Broadcast complete** in `{completed_in}`\n\nTotal: {total_users} | Success: {success} | Failed: {failed}",
             quote=True
         )
     os.remove('broadcast.txt')

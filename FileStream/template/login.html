@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In — FileStream Library</title>
+    <link rel="icon" href="https://i.ibb.co/Hh4kF2b/icon.png" type="image/x-icon">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #0f0f0f;
+            --card: #1a1a1a;
+            --accent: #e50914;
+            --accent2: #f40612;
+            --text: #ffffff;
+            --text2: #b3b3b3;
+            --text3: #737373;
+            --border: #2a2a2a;
+            --border2: #383838;
+            --input-bg: #111111;
+            --error: #ff5561;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        body::before {
+            content: '';
+            position: fixed; inset: 0;
+            background:
+                radial-gradient(ellipse 60% 40% at 20% 20%, rgba(229,9,20,0.07) 0%, transparent 60%),
+                radial-gradient(ellipse 50% 50% at 80% 80%, rgba(229,9,20,0.05) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .card {
+            position: relative;
+            z-index: 1;
+            background: var(--card);
+            border: 1px solid var(--border2);
+            border-radius: 16px;
+            padding: 44px 40px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04) inset;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 32px;
+            text-decoration: none;
+            justify-content: center;
+        }
+        .logo-icon {
+            width: 34px; height: 34px;
+            background: var(--accent);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .logo-icon svg { width: 15px; height: 15px; }
+        .logo-text { font-size: 20px; font-weight: 700; color: var(--text); letter-spacing: -0.3px; }
+        .logo-text em { color: var(--accent); font-style: normal; }
+
+        h1 {
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            text-align: center;
+        }
+
+        .sub {
+            font-size: 13px;
+            color: var(--text3);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .error-box {
+            display: none;
+            background: rgba(229,9,20,0.1);
+            border: 1px solid rgba(229,9,20,0.3);
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 13px;
+            color: var(--error);
+            margin-bottom: 18px;
+            text-align: center;
+        }
+        .error-box.show { display: block; }
+
+        .field { margin-bottom: 16px; }
+
+        label {
+            display: block;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text2);
+            margin-bottom: 6px;
+            letter-spacing: 0.3px;
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 11px 14px;
+            background: var(--input-bg);
+            border: 1px solid var(--border2);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+            transition: border-color 0.18s, box-shadow 0.18s;
+            outline: none;
+        }
+        input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(229,9,20,0.15);
+        }
+        input::placeholder { color: var(--text3); }
+
+        .pwd-wrap { position: relative; }
+        .pwd-toggle {
+            position: absolute;
+            right: 12px; top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--text3);
+            cursor: pointer;
+            padding: 4px;
+            display: flex; align-items: center;
+        }
+        .pwd-toggle:hover { color: var(--text2); }
+        .pwd-toggle svg { width: 15px; height: 15px; }
+
+        .submit-btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: background 0.18s, transform 0.12s;
+            letter-spacing: 0.3px;
+        }
+        .submit-btn:hover { background: var(--accent2); transform: translateY(-1px); }
+        .submit-btn:active { transform: translateY(0); }
+
+        .footer-note {
+            text-align: center;
+            font-size: 12px;
+            color: var(--text3);
+            margin-top: 28px;
+        }
+        .footer-note a { color: var(--text3); text-decoration: none; }
+        .footer-note a:hover { color: var(--text2); }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <a href="/" class="logo">
+            <div class="logo-icon">
+                <svg viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg>
+            </div>
+            <span class="logo-text">File<em>Stream</em></span>
+        </a>
+
+        <h1>Sign In</h1>
+        <p class="sub">Access your file library</p>
+
+        <div class="error-box {% if error %}show{% endif %}">
+            {{ error if error else '' }}
+        </div>
+
+        <form method="POST" action="/login">
+            <div class="field">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" placeholder="Enter username" autocomplete="username" required>
+            </div>
+            <div class="field">
+                <label for="password">Password</label>
+                <div class="pwd-wrap">
+                    <input type="password" id="password" name="password" placeholder="Enter password" autocomplete="current-password" required>
+                    <button type="button" class="pwd-toggle" onclick="togglePwd()">
+                        <svg id="eyeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <button type="submit" class="submit-btn">Sign In</button>
+        </form>
+
+        <div class="footer-note">
+            <a href="/">← Back to home</a>
+        </div>
+    </div>
+
+    <script>
+        function togglePwd() {
+            const inp = document.getElementById('password');
+            const icon = document.getElementById('eyeIcon');
+            if (inp.type === 'password') {
+                inp.type = 'text';
+                icon.innerHTML = `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>`;
+            } else {
+                inp.type = 'password';
+                icon.innerHTML = `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
+            }
+        }
+    </script>
+</body>
+</html>

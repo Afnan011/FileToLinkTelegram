@@ -8,7 +8,7 @@ async def send_msg(user_id, message):
         return 200, None
     except FloodWait as e:
         await asyncio.sleep(e.value)
-        return send_msg(user_id, message)
+        return await send_msg(user_id, message)  # was missing 'await' — caused silent failure
     except InputUserDeactivated:
         return 400, f"{user_id} : deactivated\n"
     except UserIsBlocked:

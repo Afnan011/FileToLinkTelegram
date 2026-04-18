@@ -108,6 +108,25 @@ class Database:
             return await self.file.count_documents({"user_id": id})
         return await self.file.count_documents({})
 
+# ---------------------[ ALL FILES (Library) ]---------------------#
+    async def get_all_files(self, skip=0, limit=20, search="", file_type=""):
+        query = {}
+        if search:
+            query["file_name"] = {"$regex": search, "$options": "i"}
+        if file_type and file_type != "all":
+            if file_type == "video":
+                query["mime_type"] = {"$regex": "^video/", "$options": "i"}
+            elif file_type == "audio":
+                query["mime_type"] = {"$regex": "^audio/", "$options": "i"}
+            elif file_type == "image":
+                query["mime_type"] = {"$regex": "^image/", "$options": "i"}
+            elif file_type == "other":
+                query["mime_type"] = {"$not": {"$regex": "^(video|audio|image)/", "$options": "i"}}
+
+        cursor = self.file.find(query).sort('time', pymongo.DESCENDING).skip(skip).limit(limit)
+        total  = await self.file.count_documents(query)
+        return cursor, total
+
 # ---------------------[ DELETE FILES ]---------------------#
     async def delete_one_file(self, _id):
         await self.file.delete_one({'_id': ObjectId(_id)})
