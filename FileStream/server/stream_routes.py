@@ -18,6 +18,7 @@ from FileStream import utils, StartTime, __version__
 from FileStream.utils.render_template import render_page
 from FileStream.utils.database import Database
 from FileStream.utils.human_readable import humanbytes
+from FileStream.utils.mkv_probe import probe_mkv
 
 routes = web.RouteTableDef()
 
@@ -163,17 +164,22 @@ async def api_files(request: web.Request):
 
 @routes.get("/api/tracks/{path}", allow_head=True)
 async def get_tracks(request: web.Request):
-    """Use ffprobe to detect audio/subtitle tracks in the file."""
+    """
+    Detect audio/subtitle tracks in an MKV file.
+    Strategy 1: ffprobe (fast, accurate — needs FFmpeg installed).
+    Strategy 2: pure-Python EBML parser (no binaries, works everywhere).
+    """
     path = request.match_info["path"]
+    file_url = urllib.parse.urljoin(Server.URL, f'dl/{path}')
+
+    # ── Strategy 1: ffprobe ──────────────────────────────────
     try:
-        file_url = urllib.parse.urljoin(Server.URL, f'dl/{path}')
         proc = await asyncio.create_subprocess_exec(
-            'ffprobe',
-            '-v', 'quiet',
+            'ffprobe', '-v', 'quiet',
             '-print_format', 'json',
             '-show_streams',
-            '-analyzeduration', '1000000',  # 1 second
-            '-probesize', '3000000',         # 3 MB read limit
+            '-analyzeduration', '1000000',
+            '-probesize', '3000000',
             file_url,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.DEVNULL
@@ -181,48 +187,46 @@ async def get_tracks(request: web.Request):
         stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=30)
         data = json.loads(stdout.decode())
 
-        audio_tracks = []
-        subtitle_tracks = []
-        audio_idx = 0
-        sub_idx   = 0
-
+        audio_tracks, subtitle_tracks = [], []
+        ai = si = 0
         for stream in data.get('streams', []):
-            codec_type = stream.get('codec_type', '')
+            ct   = stream.get('codec_type', '')
             tags = stream.get('tags', {})
-            language = tags.get('language', tags.get('LANGUAGE', ''))
-            title    = tags.get('title',    tags.get('TITLE', ''))
-            label = title or language or None
-
-            if codec_type == 'audio':
-                audio_tracks.append({
-                    'index':    audio_idx,
-                    'codec':    stream.get('codec_name', ''),
-                    'language': language,
-                    'title':    title,
-                    'label':    label or f'Audio {audio_idx + 1}',
-                    'channels': stream.get('channels', 2),
-                })
-                audio_idx += 1
-            elif codec_type == 'subtitle':
-                subtitle_tracks.append({
-                    'index':    sub_idx,
-                    'codec':    stream.get('codec_name', ''),
-                    'language': language,
-                    'title':    title,
-                    'label':    label or f'Subtitle {sub_idx + 1}',
-                })
-                sub_idx += 1
+            lang  = tags.get('language', tags.get('LANGUAGE', ''))
+            title = tags.get('title',    tags.get('TITLE', ''))
+            label = title or lang or None
+            if ct == 'audio':
+                audio_tracks.append({'index': ai, 'label': label or f'Audio {ai+1}',
+                    'language': lang, 'title': title, 'codec': stream.get('codec_name', '')})
+                ai += 1
+            elif ct == 'subtitle':
+                subtitle_tracks.append({'index': si, 'label': label or f'Subtitle {si+1}',
+                    'language': lang, 'title': title, 'codec': stream.get('codec_name', '')})
+                si += 1
 
         return web.json_response(
-            {'audio': audio_tracks, 'subtitles': subtitle_tracks},
-            headers={'Cache-Control': 'max-age=300'}  # cache 5 min
+            {'audio': audio_tracks, 'subtitles': subtitle_tracks, 'method': 'ffprobe'},
+            headers={'Cache-Control': 'max-age=300'}
+        )
+
+    except FileNotFoundError:
+        pass   # ffprobe not installed — fall through to Python parser
+    except Exception as e:
+        logging.warning(f"ffprobe failed ({e}), trying EBML fallback")
+
+    # ── Strategy 2: pure-Python EBML MKV parser ──────────────
+    try:
+        audio_tracks, subtitle_tracks = await asyncio.wait_for(
+            probe_mkv(file_url), timeout=40
+        )
+        return web.json_response(
+            {'audio': audio_tracks, 'subtitles': subtitle_tracks, 'method': 'ebml'},
+            headers={'Cache-Control': 'max-age=300'}
         )
     except asyncio.TimeoutError:
         return web.json_response({'audio': [], 'subtitles': [], 'error': 'probe_timeout'})
-    except FileNotFoundError:
-        return web.json_response({'audio': [], 'subtitles': [], 'error': 'ffprobe_not_found'})
     except Exception as e:
-        logging.error(f"Track detection error: {e}")
+        logging.error(f"EBML probe failed: {e}")
         return web.json_response({'audio': [], 'subtitles': [], 'error': str(e)})
 
 
