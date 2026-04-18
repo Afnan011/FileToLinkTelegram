@@ -248,7 +248,7 @@ async def remux_handler(request: web.Request):
         raw_name  = (file_info.get('file_name', 'video') if file_info else 'video')
         file_name = raw_name.rsplit('.', 1)[0] + '.mkv' if '.' in raw_name else raw_name + '.mkv'
 
-        cmd = ['ffmpeg', '-v', 'quiet']
+        cmd = ['ffmpeg', '-y']
         # Fast-seek BEFORE -i: FFmpeg translates to HTTP Range on the /dl/ stream.
         if seek_time > 10:
             cmd += ['-ss', str(int(seek_time))]
@@ -267,8 +267,18 @@ async def remux_handler(request: web.Request):
         proc = await asyncio.create_subprocess_exec(
             *cmd,
             stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.DEVNULL
+            stderr=asyncio.subprocess.PIPE
         )
+
+        async def log_stderr():
+            try:
+                err = await proc.stderr.read()
+                if err:
+                    logging.error(f"[ffmpeg error /remux]:\n{err.decode(errors='ignore')}")
+            except Exception:
+                pass
+
+        asyncio.create_task(log_stderr())
 
         async def body_generator():
             try:
@@ -311,18 +321,38 @@ async def subtitle_handler(request: web.Request):
     path        = request.match_info["path"]
     track_str   = request.match_info["track_index"]   # e.g. '0.vtt'
     track_index = int(track_str.split('.')[0])
+    seek_time   = float(request.rel_url.query.get("t", 0))
+
     try:
         file_url = urllib.parse.urljoin(Server.URL, f'dl/{path}')
-        proc = await asyncio.create_subprocess_exec(
-            'ffmpeg',
-            '-v', 'quiet',
+        
+        cmd = ['ffmpeg', '-y']
+        if seek_time > 10:
+            cmd += ['-ss', str(int(seek_time))]
+        
+        cmd += [
             '-i', file_url,
             '-map', f'0:s:{track_index}',
+            '-copyts',
             '-f', 'webvtt',
-            'pipe:1',
+            'pipe:1'
+        ]
+
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
             stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.DEVNULL
+            stderr=asyncio.subprocess.PIPE
         )
+
+        async def log_stderr():
+            try:
+                err = await proc.stderr.read()
+                if err:
+                    logging.error(f"[ffmpeg error /sub]:\n{err.decode(errors='ignore')}")
+            except Exception:
+                pass
+
+        asyncio.create_task(log_stderr())
 
         async def vtt_generator():
             try:

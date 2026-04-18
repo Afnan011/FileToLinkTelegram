@@ -792,7 +792,8 @@ async function switchSub(idx){
         toast('💬 Connecting subtitle stream…');
         subCues = [];
         try {
-            const r = await fetch(`/sub/${FILE_ID}/${idx}.vtt`);
+            const startT = vid.currentTime || 0;
+            const r = await fetch(`/sub/${FILE_ID}/${idx}.vtt?t=${startT}`);
             if(!r.ok) throw new Error('bad response');
             
             const reader = r.body.getReader();
