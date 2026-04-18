@@ -41,6 +41,34 @@ async def start_services():
     FileStream.id = bot_info.id
     FileStream.username = bot_info.username
     FileStream.fname=bot_info.first_name
+
+    # ── Set bot command menus ──────────────────────────────────
+    try:
+        from pyrogram.types import BotCommand, BotCommandScopeDefault, BotCommandScopeChat
+        # Public menu — only /start visible to all users
+        await FileStream.set_bot_commands(
+            commands=[
+                BotCommand("start", "Start the bot and get help"),
+            ],
+            scope=BotCommandScopeDefault()
+        )
+        # Owner private chat — all admin commands visible
+        await FileStream.set_bot_commands(
+            commands=[
+                BotCommand("start",           "Start the bot"),
+                BotCommand("status",          "Bot status, users & link stats"),
+                BotCommand("broadcast",       "Broadcast a message to all users"),
+                BotCommand("broadcaststatus", "Check active broadcast progress"),
+                BotCommand("ban",             "Ban a user — /ban <user_id>"),
+                BotCommand("unban",           "Unban a user — /unban <user_id>"),
+                BotCommand("del",             "Delete a file link — /del <file_id>"),
+            ],
+            scope=BotCommandScopeChat(chat_id=Telegram.OWNER_ID)
+        )
+        print("✅ Bot commands set (public: /start | admin: all commands)")
+    except Exception as e:
+        print(f"⚠️  Could not set bot commands: {e}")
+    # ────────────────────────────────────────────────────────────
     print("------------------------------ DONE ------------------------------")
     print()
     print("---------------------- Initializing Clients ----------------------")

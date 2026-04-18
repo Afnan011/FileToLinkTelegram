@@ -12,303 +12,150 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
         :root {
-            --bg: #0f0f0f;
-            --bg2: #1a1a1a;
-            --bg3: #222222;
-            --accent: #e50914;
-            --accent2: #f40612;
-            --text: #ffffff;
-            --text2: #b3b3b3;
-            --text3: #737373;
-            --border: #2a2a2a;
-            --border2: #383838;
+            --bg: #0f0f0f; --bg2: #1a1a1a; --bg3: #232323;
+            --accent: #e50914; --accent2: #f40612;
+            --text: #fff; --text2: #b3b3b3; --text3: #6e6e6e;
+            --border: #2a2a2a; --border2: #383838;
         }
-
         html { scroll-behavior: smooth; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-
-        /* ──── NAVBAR ──── */
+        /* NAV */
         .nav {
-            position: sticky;
-            top: 0;
-            z-index: 200;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+            position: sticky; top: 0; z-index: 200;
+            display: flex; align-items: center; justify-content: space-between;
             padding: 14px 32px;
-            background: linear-gradient(180deg, rgba(15,15,15,0.97) 0%, rgba(15,15,15,0.6) 80%, transparent 100%);
+            background: linear-gradient(180deg, rgba(15,15,15,.97) 0%, rgba(15,15,15,.5) 80%, transparent 100%);
             backdrop-filter: blur(6px);
-            -webkit-backdrop-filter: blur(6px);
         }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            text-decoration: none;
-        }
-        .logo-icon {
-            width: 30px; height: 30px;
-            background: var(--accent);
-            border-radius: 7px;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .logo-icon svg { width: 14px; height: 14px; }
-        .logo-text {
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--text);
-            letter-spacing: -0.3px;
-        }
+        .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+        .logo-icon { width: 30px; height: 30px; background: var(--accent); border-radius: 7px; display: flex; align-items: center; justify-content: center; }
+        .logo-icon svg { width: 13px; height: 13px; }
+        .logo-text { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
         .logo-text em { color: var(--accent); font-style: normal; }
-
-        .nav-right { display: flex; align-items: center; gap: 10px; }
-
+        .nav-right { display: flex; gap: 10px; align-items: center; }
         .nav-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 7px 14px;
-            border-radius: 6px;
-            font-size: 13px;
-            font-weight: 500;
-            text-decoration: none;
-            cursor: pointer;
-            border: none;
-            font-family: 'Inter', sans-serif;
-            transition: all 0.18s;
+            display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px;
+            border-radius: 6px; font-size: 13px; font-weight: 500; text-decoration: none;
+            cursor: pointer; border: none; font-family: 'Inter', sans-serif; transition: all .18s;
         }
-        .nav-btn.lib {
-            background: transparent;
-            color: var(--text2);
-            border: 1px solid var(--border2);
-        }
-        .nav-btn.lib:hover { color: var(--text); border-color: #555; background: rgba(255,255,255,0.05); }
-
+        .nav-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+        .nav-btn.ghost { background: transparent; color: var(--text2); border: 1px solid var(--border2); }
+        .nav-btn.ghost:hover { color: var(--text); border-color: #555; background: rgba(255,255,255,.05); }
         .nav-btn.tg { background: #229ED9; color: #fff; }
         .nav-btn.tg:hover { background: #1a8abf; }
-        .nav-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
 
-        /* ──── PLAYER ──── */
-        .player-wrap {
-            background: #000;
-            width: 100%;
-            position: relative;
-        }
-
+        /* PLAYER */
+        .player-wrap { background: #000; width: 100%; }
         .plyr {
             --plyr-color-main: var(--accent);
             --plyr-font-family: 'Inter', sans-serif;
-            --plyr-font-size-base: 13px;
-            --plyr-control-icon-size: 16px;
             --plyr-video-controls-background: linear-gradient(transparent, rgba(0,0,0,0.88));
             --plyr-range-track-height: 4px;
-            --plyr-range-thumb-height: 14px;
-            --plyr-range-thumb-width: 14px;
             border-radius: 0;
         }
+        .plyr video { width: 100%; max-height: 75vh; object-fit: contain; }
 
-        .plyr--video { background: #000; }
-
-        .plyr video {
-            width: 100%;
-            max-height: 76vh;
-            object-fit: contain;
-        }
-
-        /* ──── INFO SECTION ──── */
-        .info {
-            max-width: 1100px;
-            margin: 0 auto;
-            padding: 28px 32px 16px;
-        }
-
-        .file-title {
-            font-size: 21px;
-            font-weight: 600;
-            color: var(--text);
-            line-height: 1.35;
-            margin-bottom: 12px;
-            word-break: break-word;
-        }
-
-        .meta-row {
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-bottom: 22px;
-        }
-
+        /* INFO SECTION */
+        .info { max-width: 1100px; margin: 0 auto; padding: 24px 32px 12px; }
+        .file-title { font-size: 20px; font-weight: 600; line-height: 1.35; margin-bottom: 10px; word-break: break-word; }
+        .meta-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
         .badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            padding: 3px 10px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 0.6px;
-            text-transform: uppercase;
+            display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px;
+            border-radius: 4px; font-size: 11px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase;
         }
-        .badge.type-video  { background: rgba(229,9,20,0.14); color: #ff5561; border: 1px solid rgba(229,9,20,0.3); }
-        .badge.type-audio  { background: rgba(29,185,84,0.14); color: #1db954; border: 1px solid rgba(29,185,84,0.3); }
-        .badge.type-other  { background: rgba(80,120,255,0.14); color: #6b9bff; border: 1px solid rgba(80,120,255,0.3); }
-        .badge.size        { background: rgba(255,255,255,0.06); color: var(--text2); border: 1px solid var(--border2); }
-        .badge.quality     { background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.25); }
+        .badge.video { background: rgba(229,9,20,.14); color: #ff5561; border: 1px solid rgba(229,9,20,.3); }
+        .badge.size  { background: rgba(255,255,255,.06); color: var(--text2); border: 1px solid var(--border2); }
+        .badge.qual  { background: rgba(255,255,255,.1); color: #fff; border: 1px solid rgba(255,255,255,.25); }
 
-        /* ──── TRACKS PANEL ──── */
-        .tracks-section {
-            display: none;
-            background: var(--bg3);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 16px 20px;
-            margin-bottom: 20px;
-            animation: fadeUp 0.25s ease;
+        /* TRACKS PANELS */
+        .tracks-block {
+            background: var(--bg3); border: 1px solid var(--border);
+            border-radius: 12px; padding: 16px 20px; margin-bottom: 14px;
+            animation: fadeUp .25s ease;
         }
-        .tracks-section.show { display: block; }
-
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(6px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
         .tracks-label {
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--text3);
-            margin-bottom: 10px;
+            font-size: 11px; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 1px; color: var(--text3); margin-bottom: 10px;
+            display: flex; align-items: center; gap: 6px;
         }
-
         .tracks-row { display: flex; flex-wrap: wrap; gap: 6px; }
-
         .track-pill {
-            padding: 5px 14px;
-            border-radius: 20px;
-            border: 1px solid var(--border2);
-            background: transparent;
-            color: var(--text2);
-            font-size: 12px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.15s;
-            font-family: 'Inter', sans-serif;
+            padding: 6px 16px; border-radius: 20px; border: 1px solid var(--border2);
+            background: transparent; color: var(--text2); font-size: 12px; font-weight: 500;
+            cursor: pointer; transition: all .15s; font-family: 'Inter', sans-serif;
         }
         .track-pill:hover { border-color: #666; color: var(--text); }
         .track-pill.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+        .track-pill:disabled { opacity: .4; cursor: not-allowed; }
+        .track-loading { font-size: 12px; color: var(--text3); display: flex; align-items: center; gap: 8px; }
+        .spinner { width: 14px; height: 14px; border: 2px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; flex-shrink: 0; }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* ──── DIVIDER ──── */
+        /* SWITCHING OVERLAY */
+        .switching-msg {
+            display: none; align-items: center; gap: 8px;
+            font-size: 12px; color: var(--accent); margin-top: 10px;
+        }
+        .switching-msg.show { display: flex; }
+
+        /* DIVIDER */
         .divider { height: 1px; background: var(--border); margin: 20px 0; }
 
-        /* ──── ACTIONS ──── */
-        .actions-label {
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--text3);
-            margin-bottom: 12px;
-        }
-
+        /* ACTIONS */
+        .actions-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text3); margin-bottom: 12px; }
         .actions-row { display: flex; flex-wrap: wrap; gap: 8px; }
-
         .action-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 18px;
-            border-radius: 8px;
-            border: 1px solid var(--border2);
-            background: var(--bg3);
-            color: var(--text);
-            font-size: 13px;
-            font-weight: 500;
-            cursor: pointer;
-            text-decoration: none;
-            font-family: 'Inter', sans-serif;
-            transition: all 0.18s;
-            white-space: nowrap;
+            display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px;
+            border-radius: 8px; border: 1px solid var(--border2); background: var(--bg3);
+            color: var(--text); font-size: 13px; font-weight: 500; cursor: pointer;
+            text-decoration: none; font-family: 'Inter', sans-serif; transition: all .18s; white-space: nowrap;
         }
-        .action-btn:hover { background: var(--bg2); border-color: #555; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .action-btn:hover { background: var(--bg2); border-color: #555; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,.3); }
         .action-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
         .action-btn.primary:hover { background: var(--accent2); border-color: var(--accent2); }
         .action-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
 
-        /* ──── TOAST ──── */
+        /* TOAST */
         .toast {
-            position: fixed;
-            bottom: 28px;
-            left: 50%;
+            position: fixed; bottom: 28px; left: 50%;
             transform: translateX(-50%) translateY(70px);
-            background: rgba(28,28,28,0.96);
-            color: #fff;
-            padding: 11px 22px;
-            border-radius: 8px;
-            font-size: 13px;
-            font-weight: 500;
-            border: 1px solid var(--border2);
-            backdrop-filter: blur(10px);
-            z-index: 999;
-            transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s;
-            opacity: 0;
-            pointer-events: none;
+            background: rgba(20,20,20,.96); color: #fff; padding: 11px 22px;
+            border-radius: 8px; font-size: 13px; font-weight: 500;
+            border: 1px solid var(--border2); backdrop-filter: blur(10px);
+            z-index: 999; transition: transform .3s cubic-bezier(.34,1.56,.64,1), opacity .3s;
+            opacity: 0; pointer-events: none;
         }
         .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 
-        /* ──── FOOTER ──── */
-        .footer {
-            text-align: center;
-            padding: 28px 32px;
-            color: var(--text3);
-            font-size: 12px;
-            border-top: 1px solid var(--border);
-            margin-top: 48px;
-        }
-        .footer a { color: var(--text3); text-decoration: none; }
-        .footer a:hover { color: var(--text2); }
+        footer { text-align: center; padding: 28px; color: var(--text3); font-size: 12px; border-top: 1px solid var(--border); margin-top: 48px; }
+        footer a { color: var(--text3); text-decoration: none; }
+        footer a:hover { color: var(--text2); }
 
-        /* ──── RESPONSIVE ──── */
         @media (max-width: 768px) {
             .nav { padding: 12px 16px; }
-            .info { padding: 18px 16px 12px; }
-            .file-title { font-size: 16px; }
+            .info { padding: 16px 16px 10px; }
+            .file-title { font-size: 15px; }
             .action-btn { padding: 9px 14px; font-size: 12px; }
-            .nav-btn.lib { display: none; }
-        }
-        @media (max-width: 480px) {
-            .logo-text { font-size: 15px; }
-            .nav-btn.tg span { display: none; }
+            .nav-btn.ghost { display: none; }
         }
     </style>
 </head>
 <body>
 
-<!-- NAVBAR -->
 <nav class="nav">
     <a href="/" class="logo">
-        <div class="logo-icon">
-            <svg viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg>
-        </div>
+        <div class="logo-icon"><svg viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg></div>
         <span class="logo-text">File<em>Stream</em></span>
     </a>
     <div class="nav-right">
-        <a href="/files" class="nav-btn lib">
+        <a href="/files" class="nav-btn ghost">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
             Library
         </a>
-        <a href="https://t.me/FilmyPixel" class="nav-btn tg">
+        <a href="https://t.me/FilmyPixel" class="nav-btn tg" target="_blank">
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.248-2.05 9.656c-.148.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.913.565z"/></svg>
             <span>Telegram</span>
         </a>
@@ -322,31 +169,46 @@
     </video>
 </div>
 
-<!-- INFO + ACTIONS -->
+<!-- INFO -->
 <div class="info">
-    <h1 class="file-title" id="fileTitle">{{file_name}}</h1>
+    <h1 class="file-title">{{file_name}}</h1>
     <div class="meta-row" id="metaRow">
+        <span class="badge video">VIDEO</span>
         <span class="badge size">{{file_size}}</span>
-        <span class="badge quality" id="qualBadge" style="display:none">HD</span>
+        <span class="badge qual" id="qualBadge" style="display:none">HD</span>
     </div>
 
-    <!-- Audio Tracks Panel -->
-    <div class="tracks-section" id="audioPanel">
-        <div class="tracks-label">🎵 Audio Tracks</div>
-        <div class="tracks-row" id="audioRow"></div>
+    <!-- AUDIO TRACKS -->
+    <div class="tracks-block" id="audioBlock">
+        <div class="tracks-label">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+            Audio Tracks
+        </div>
+        <div class="tracks-row" id="audioRow">
+            <span class="track-loading"><span class="spinner"></span>Detecting tracks…</span>
+        </div>
+        <div class="switching-msg" id="audioSwitching">
+            <span class="spinner"></span> Switching audio — reloading from current position…
+        </div>
     </div>
 
-    <!-- Subtitle Tracks Panel -->
-    <div class="tracks-section" id="subPanel">
-        <div class="tracks-label">💬 Subtitles / Captions</div>
+    <!-- SUBTITLE TRACKS -->
+    <div class="tracks-block" id="subBlock" style="display:none">
+        <div class="tracks-label">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            Subtitles
+        </div>
         <div class="tracks-row" id="subRow"></div>
+        <div class="switching-msg" id="subSwitching">
+            <span class="spinner"></span> Loading subtitle…
+        </div>
     </div>
 
     <div class="divider"></div>
 
     <div class="actions-label">Open with</div>
     <div class="actions-row">
-        <a class="action-btn primary" id="dlBtn" href="{{file_url}}" download>
+        <a class="action-btn primary" href="{{file_url}}" download>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Download
         </a>
@@ -355,15 +217,15 @@
             Copy Link
         </button>
         <button class="action-btn" onclick="openVLC()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-            VLC Player
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            VLC (Full MKV support)
         </button>
         <button class="action-btn" onclick="openMX()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
             MX Player
         </button>
         <button class="action-btn" onclick="openNPlayer()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="4"/><polygon points="9 8 17 12 9 16 9 8"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="4"/><polygon points="9 8 17 12 9 16 9 8"/></svg>
             nPlayer
         </button>
     </div>
@@ -371,24 +233,20 @@
 
 <div class="toast" id="toast"></div>
 
-<footer class="footer">
-    <p>Powered by <a href="https://github.com/Afnan011">FileStream</a> &nbsp;·&nbsp; © 2024 Muhammad Afnan. All rights reserved.</p>
+<footer>
+    <p>Powered by <a href="https://github.com/Afnan011">FileStream</a> &nbsp;·&nbsp; © 2024 Muhammad Afnan</p>
 </footer>
 
 <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
 <script>
     const FILE_URL  = "{{file_url}}";
     const FILE_NAME = "{{file_name}}";
+    const FILE_ID   = "{{file_id}}";
 
-    // ── Init Plyr ──────────────────────────────────────────────
+    // ── Init Plyr ────────────────────────────────────────────
     const player = new Plyr('#player', {
-        controls: [
-            'play-large', 'play', 'rewind', 'fast-forward',
-            'progress', 'current-time', 'duration',
-            'mute', 'volume', 'captions', 'settings', 'pip',
-            'airplay', 'fullscreen'
-        ],
-        settings: ['captions', 'quality', 'speed'],
+        controls: ['play-large','play','rewind','fast-forward','progress','current-time','duration','mute','volume','captions','settings','pip','airplay','fullscreen'],
+        settings: ['captions','quality','speed'],
         speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2] },
         keyboard: { focused: true, global: true },
         tooltips: { controls: true, seek: true },
@@ -396,135 +254,211 @@
         fullscreen: { enabled: true, fallback: true, iosNative: true },
         storage: { enabled: true, key: 'plyr_prefs' },
     });
-
     const vid = document.querySelector('#player');
 
-    // ── Set type badge color ───────────────────────────────────
-    (function setBadge() {
-        const mime = "{{file_url}}".toLowerCase();
-        const metaRow = document.getElementById('metaRow');
-        let typeBadge = document.createElement('span');
-        typeBadge.className = 'badge';
-        if (mime.includes('/video') || FILE_URL.match(/\.(mp4|mkv|avi|mov|webm)/i)) {
-            typeBadge.className += ' type-video'; typeBadge.textContent = 'VIDEO';
-        } else if (mime.includes('/audio') || FILE_URL.match(/\.(mp3|flac|aac|ogg|wav)/i)) {
-            typeBadge.className += ' type-audio'; typeBadge.textContent = 'AUDIO';
-        } else {
-            typeBadge.className += ' type-other'; typeBadge.textContent = 'MEDIA';
-        }
-        metaRow.prepend(typeBadge);
-    })();
-
-    // ── Metadata loaded: detect tracks & quality ───────────────
+    // Quality badge
     vid.addEventListener('loadedmetadata', () => {
-        // Quality badge
         if (vid.videoHeight >= 720) {
             const qb = document.getElementById('qualBadge');
             qb.style.display = 'inline-flex';
             qb.textContent = vid.videoHeight >= 2160 ? '4K' : vid.videoHeight >= 1080 ? 'FHD' : 'HD';
         }
-
-        detectAudioTracks();
-        detectSubtitleTracks();
     });
 
-    // Audio track switching (Chrome/Edge only)
-    function detectAudioTracks() {
-        const tracks = vid.audioTracks;
-        if (!tracks || tracks.length <= 1) return;
+    // ── Load tracks from server (ffprobe) ────────────────────
+    let tracksData = { audio: [], subtitles: [] };
+    let currentAudioIdx  = 0;
+    let currentSubIdx    = -1;  // -1 = off
+    let isUsingRemux     = false;
 
-        const panel = document.getElementById('audioPanel');
-        const row   = document.getElementById('audioRow');
-        panel.classList.add('show');
-
-        for (let i = 0; i < tracks.length; i++) {
-            const t   = tracks[i];
-            const btn = mkPill(t.label || t.language || `Track ${i+1}`, t.enabled);
-            btn.addEventListener('click', () => {
-                for (let j = 0; j < tracks.length; j++) tracks[j].enabled = (j === i);
-                row.querySelectorAll('.track-pill').forEach((b, j) => b.classList.toggle('active', j === i));
-            });
-            row.appendChild(btn);
+    async function loadTracks() {
+        try {
+            const res  = await fetch(`/api/tracks/${FILE_ID}`);
+            const data = await res.json();
+            tracksData = data;
+            renderAudioTracks(data.audio   || []);
+            renderSubtitleTracks(data.subtitles || []);
+        } catch (e) {
+            document.getElementById('audioRow').innerHTML =
+                '<span style="font-size:12px;color:var(--text3)">Could not detect tracks</span>';
         }
     }
 
-    // Subtitle / caption track switching
-    function detectSubtitleTracks() {
-        const tracks = vid.textTracks;
-        const subs   = [];
-        for (let i = 0; i < tracks.length; i++) {
-            if (tracks[i].kind === 'subtitles' || tracks[i].kind === 'captions') {
-                subs.push({ track: tracks[i], idx: i });
-            }
+    // ── AUDIO ────────────────────────────────────────────────
+    function renderAudioTracks(tracks) {
+        const row   = document.getElementById('audioRow');
+        if (tracks.length === 0) {
+            row.innerHTML = '<span style="font-size:12px;color:var(--text3)">Single audio track (no switching needed)</span>';
+            return;
         }
-        if (subs.length === 0) return;
+        row.innerHTML = '';
+        // "Original" pill = use direct /dl/ stream (no remux)
+        tracks.forEach((t, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'track-pill' + (i === 0 ? ' active' : '');
+            btn.textContent = t.label + (t.codec ? ` (${t.codec.toUpperCase()})` : '');
+            btn.title = [t.language && `Language: ${t.language}`, t.channels && `Channels: ${t.channels}`].filter(Boolean).join(' · ');
+            btn.addEventListener('click', () => switchAudio(i, btn));
+            row.appendChild(btn);
+        });
+    }
 
-        const panel = document.getElementById('subPanel');
-        const row   = document.getElementById('subRow');
-        panel.classList.add('show');
+    async function switchAudio(trackIdx, clickedBtn) {
+        if (trackIdx === currentAudioIdx && isUsingRemux) return;
+        const savedTime   = vid.currentTime;
+        const wasPaused   = player.paused;
+
+        currentAudioIdx = trackIdx;
+        isUsingRemux    = true;
+
+        // UI feedback
+        document.querySelectorAll('#audioRow .track-pill').forEach(b => b.classList.remove('active'));
+        clickedBtn.classList.add('active');
+        document.querySelectorAll('#audioRow .track-pill').forEach(b => b.disabled = true);
+        document.getElementById('audioSwitching').classList.add('show');
+
+        // Switch source to /remux/?audio=N
+        const remuxUrl = `/remux/${FILE_ID}?audio=${trackIdx}`;
+        vid.src = remuxUrl;
+        vid.load();
+
+        toast(`🎵 Switching to: ${clickedBtn.textContent.split(' (')[0]}…`);
+
+        vid.addEventListener('canplay', function onCanPlay() {
+            vid.removeEventListener('canplay', onCanPlay);
+            // Seek back to saved position
+            if (savedTime > 0) {
+                vid.currentTime = savedTime;
+            }
+            if (!wasPaused) {
+                vid.play().catch(() => {});
+            }
+            document.getElementById('audioSwitching').classList.remove('show');
+            document.querySelectorAll('#audioRow .track-pill').forEach(b => b.disabled = false);
+            toast(`✅ Audio switched`);
+        });
+    }
+
+    // ── SUBTITLES ────────────────────────────────────────────
+    function renderSubtitleTracks(tracks) {
+        if (tracks.length === 0) return;
+
+        document.getElementById('subBlock').style.display = 'block';
+        const row = document.getElementById('subRow');
+        row.innerHTML = '';
 
         // Off button
-        const offBtn = mkPill('Off', true);
+        const offBtn = document.createElement('button');
+        offBtn.className = 'track-pill active';
+        offBtn.textContent = 'Off';
         offBtn.addEventListener('click', () => {
-            subs.forEach(s => s.track.mode = 'hidden');
-            player.toggleCaptions(false);
-            row.querySelectorAll('.track-pill').forEach(b => b.classList.remove('active'));
-            offBtn.classList.add('active');
+            disableAllSubs();
+            setSubActive(offBtn);
+            toast('Subtitles off');
         });
         row.appendChild(offBtn);
 
-        subs.forEach(({ track, idx }, i) => {
-            const btn = mkPill(track.label || track.language || `Sub ${i+1}`, false);
-            btn.addEventListener('click', () => {
-                subs.forEach(s => s.track.mode = 'hidden');
-                track.mode = 'showing';
-                row.querySelectorAll('.track-pill').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-            });
+        tracks.forEach((t, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'track-pill';
+            btn.textContent = t.label;
+            btn.title = t.language ? `Language: ${t.language}` : '';
+            btn.addEventListener('click', () => switchSubtitle(i, btn));
             row.appendChild(btn);
         });
     }
 
-    function mkPill(label, active) {
-        const btn = document.createElement('button');
-        btn.className = 'track-pill' + (active ? ' active' : '');
-        btn.textContent = label;
-        return btn;
+    async function switchSubtitle(trackIdx, clickedBtn) {
+        const subUrl = `/sub/${FILE_ID}/${trackIdx}.vtt`;
+        document.getElementById('subSwitching').classList.add('show');
+        toast(`💬 Loading subtitle…`);
+
+        try {
+            // Remove any previously injected tracks
+            vid.querySelectorAll('track.injected').forEach(t => t.remove());
+
+            // Disable all existing text tracks
+            disableAllSubs();
+
+            // Add new track element
+            const track       = document.createElement('track');
+            track.kind        = 'subtitles';
+            track.src         = subUrl;
+            track.srclang     = tracksData.subtitles[trackIdx]?.language || 'und';
+            track.label       = tracksData.subtitles[trackIdx]?.label    || `Sub ${trackIdx}`;
+            track.className   = 'injected';
+            track.default     = true;
+            vid.appendChild(track);
+
+            // Force enable after it loads
+            track.addEventListener('load', () => {
+                track.track.mode = 'showing';
+                // Also tell Plyr
+                try { player.currentTrack = 0; } catch(e) {}
+                document.getElementById('subSwitching').classList.remove('show');
+                setSubActive(clickedBtn);
+                toast(`✅ Subtitles: ${track.label}`);
+            });
+
+            track.addEventListener('error', () => {
+                document.getElementById('subSwitching').classList.remove('show');
+                toast('⚠️ Could not load subtitle. Try another or use VLC.');
+            });
+
+        } catch(e) {
+            document.getElementById('subSwitching').classList.remove('show');
+            toast('⚠️ Subtitle load failed');
+        }
     }
 
-    // ── Toast ──────────────────────────────────────────────────
+    function disableAllSubs() {
+        const textTracks = vid.textTracks;
+        for (let i = 0; i < textTracks.length; i++) {
+            textTracks[i].mode = 'hidden';
+        }
+    }
+
+    function setSubActive(activeBtn) {
+        document.querySelectorAll('#subRow .track-pill').forEach(b => b.classList.remove('active'));
+        activeBtn.classList.add('active');
+    }
+
+    // ── Toast ────────────────────────────────────────────────
+    let toastTimer;
     function toast(msg) {
+        clearTimeout(toastTimer);
         const el = document.getElementById('toast');
         el.textContent = msg;
         el.classList.add('show');
-        setTimeout(() => el.classList.remove('show'), 2800);
+        toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
     }
 
-    // ── Actions ────────────────────────────────────────────────
+    // ── Actions ──────────────────────────────────────────────
     function copyLink() {
         const url = window.location.href;
         if (navigator.clipboard) {
             navigator.clipboard.writeText(url).then(() => toast('✅ Link copied!'));
         } else {
             const inp = document.createElement('input');
-            inp.value = url;
-            document.body.appendChild(inp);
+            inp.value = url; document.body.appendChild(inp);
             inp.select(); document.execCommand('copy');
             document.body.removeChild(inp);
             toast('✅ Link copied!');
         }
     }
-
     function openVLC()     { window.location.href = `vlc://${FILE_URL}`; setTimeout(() => toast('Opening VLC…'), 400); }
     function openMX()      { window.location.href = `intent:${FILE_URL}#Intent;package=com.mxtech.videoplayer.ad;end`; setTimeout(() => toast('Opening MX Player…'), 400); }
     function openNPlayer() { window.location.href = `nplayer-${FILE_URL}`; setTimeout(() => toast('Opening nPlayer…'), 400); }
 
-    // ── Global keyboard shortcuts ──────────────────────────────
+    // Keyboard shortcuts
     document.addEventListener('keydown', e => {
         if (['INPUT','TEXTAREA'].includes(e.target.tagName)) return;
         if (e.key === 'f' || e.key === 'F') player.fullscreen.toggle();
         if (e.key === 'm' || e.key === 'M') player.toggleMute();
     });
+
+    // Kickoff track detection
+    loadTracks();
 </script>
 </body>
 </html>

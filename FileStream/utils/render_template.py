@@ -26,5 +26,6 @@ async def render_page(db_id):
     return template.render(
         file_name=file_name,
         file_url=src,
-        file_size=file_size
+        file_size=file_size,
+        file_id=str(file_data['_id'])
     )
