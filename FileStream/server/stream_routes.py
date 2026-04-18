@@ -37,6 +37,13 @@ def _check_session(request: web.Request) -> bool:
     token = request.cookies.get("fs_session")
     return token is not None and token in _active_sessions
 
+
+@routes.get("/", allow_head=True)
+async def root_redirect(request: web.Request):
+    """Root URL — redirect to /files (which handles login redirect automatically)."""
+    raise web.HTTPFound("/files")
+
+
 @routes.get("/status", allow_head=True)
 async def root_route_handler(_):
     return web.json_response(
