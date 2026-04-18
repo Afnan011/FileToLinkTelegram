@@ -1,4 +1,4 @@
-import time
+﻿import time
 import json
 import math
 import logging
@@ -232,23 +232,41 @@ async def get_tracks(request: web.Request):
 
 @routes.get("/remux/{path}", allow_head=True)
 async def remux_handler(request: web.Request):
-    """Stream MKV with a specific audio track selected (FFmpeg copy remux — no re-encode)."""
+    """
+    Stream MKV with a chosen audio track as browser-compatible fragmented MP4.
+    - Video : copied (no re-encode).
+    - Audio : ALWAYS transcoded to AAC stereo - EAC3/AC3/DTS are not
+              decodable by browsers without transcoding.
+    - ?t=N  : fast-seek to N seconds (FFmpeg uses HTTP Range on /dl/ stream).
+    """
     path        = request.match_info["path"]
     audio_track = int(request.rel_url.query.get("audio", 0))
+    seek_time   = float(request.rel_url.query.get("t", 0))
     try:
         file_url  = urllib.parse.urljoin(Server.URL, f'dl/{path}')
         file_info = await _db.get_file(path)
-        file_name = file_info.get('file_name', 'video.mkv')
+        raw_name  = (file_info.get('file_name', 'video') if file_info else 'video')
+        file_name = raw_name.rsplit('.', 1)[0] + '.mp4' if '.' in raw_name else raw_name + '.mp4'
 
-        proc = await asyncio.create_subprocess_exec(
-            'ffmpeg',
-            '-v', 'quiet',
+        cmd = ['ffmpeg', '-v', 'quiet']
+        # Fast-seek BEFORE -i: FFmpeg translates to HTTP Range on the /dl/ stream.
+        if seek_time > 10:
+            cmd += ['-ss', str(int(seek_time))]
+        cmd += [
             '-i', file_url,
             '-map', '0:v:0',
             '-map', f'0:a:{audio_track}',
-            '-c', 'copy',           # no re-encoding — fast
-            '-f', 'matroska',       # MKV output (streaming-friendly)
+            '-c:v', 'copy',                # video: copy (no re-encode)
+            '-c:a', 'aac',                 # audio: transcode to AAC (EAC3/AC3 -> AAC)
+            '-b:a', '192k',
+            '-ac', '2',                    # downmix 5.1 -> stereo
+            '-movflags', 'frag_keyframe+empty_moov+default_base_moof',
+            '-f', 'mp4',
             'pipe:1',
+        ]
+
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.DEVNULL
         )
@@ -256,7 +274,7 @@ async def remux_handler(request: web.Request):
         async def body_generator():
             try:
                 while True:
-                    chunk = await proc.stdout.read(65536)  # 64 KB
+                    chunk = await proc.stdout.read(65536)
                     if not chunk:
                         break
                     yield chunk
@@ -270,9 +288,10 @@ async def remux_handler(request: web.Request):
         return web.Response(
             body=body_generator(),
             headers={
-                'Content-Type':        'video/x-matroska',
+                'Content-Type':        'video/mp4',
                 'Content-Disposition': f'inline; filename="{file_name}"',
                 'X-Accel-Buffering':   'no',
+                'Cache-Control':       'no-cache',
             }
         )
     except FIleNotFound:
@@ -286,9 +305,12 @@ async def remux_handler(request: web.Request):
 
 @routes.get("/sub/{path}/{track_index}", allow_head=True)
 async def subtitle_handler(request: web.Request):
-    """Extract a subtitle track from MKV and return it as WebVTT."""
+    """
+    Extract a subtitle track from MKV and stream it as WebVTT.
+    Streams chunks so the client starts receiving cues immediately.
+    """
     path        = request.match_info["path"]
-    track_str   = request.match_info["track_index"]  # e.g. '0.vtt'
+    track_str   = request.match_info["track_index"]   # e.g. '0.vtt'
     track_index = int(track_str.split('.')[0])
     try:
         file_url = urllib.parse.urljoin(Server.URL, f'dl/{path}')
@@ -302,22 +324,31 @@ async def subtitle_handler(request: web.Request):
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.DEVNULL
         )
-        stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=120)
-        if not stdout:
-            return web.Response(
-                text="WEBVTT\n\nNOTE No subtitles could be extracted from this track.",
-                content_type='text/vtt'
-            )
+
+        async def vtt_generator():
+            try:
+                while True:
+                    chunk = await asyncio.wait_for(proc.stdout.read(8192), timeout=60)
+                    if not chunk:
+                        break
+                    yield chunk
+            except asyncio.TimeoutError:
+                logging.warning("Subtitle extraction timed out (60s idle)")
+            finally:
+                try:
+                    proc.kill()
+                    await proc.wait()
+                except Exception:
+                    pass
+
         return web.Response(
-            body=stdout,
+            body=vtt_generator(),
             headers={
                 'Content-Type':                'text/vtt; charset=utf-8',
                 'Access-Control-Allow-Origin': '*',
                 'Cache-Control':               'max-age=300',
             }
         )
-    except asyncio.TimeoutError:
-        raise web.HTTPGatewayTimeout(text="Subtitle extraction timed out (>2 min)")
     except FileNotFoundError:
         raise web.HTTPServiceUnavailable(text="ffmpeg not installed on this server")
     except Exception as e:

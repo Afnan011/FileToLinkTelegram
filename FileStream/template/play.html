@@ -738,11 +738,14 @@ function switchAudio(idx){
         /* remux — reload with specific audio */
         const saved=vid.currentTime, paused=vid.paused;
         curAudio=idx;
-        vid.src=`/remux/${FILE_ID}?audio=${idx}`;
+        /* Pass t= parameter to ffmpeg for fast server-side seek */
+        vid.src=`/remux/${FILE_ID}?audio=${idx}&t=${saved}`;
         vid.load();
+        if(curSub !== -1) { 
+            setTimeout(()=>switchSub(curSub), 50); 
+        }
         vid.addEventListener('canplay',function onC(){
             vid.removeEventListener('canplay',onC);
-            vid.currentTime=saved;
             if(!paused) vid.play().catch(()=>{});
             toast(`🎵 ${lbl}`);
         },{once:true});
@@ -775,26 +778,45 @@ async function switchSub(idx){
         const nativeSubs=Array.from(vid.textTracks||[]).filter(t=>t.kind==='subtitles'||t.kind==='captions');
         const track=nativeSubs[idx];
         if(!track){ toast('⚠️ Sub track not found'); return; }
-        /* Hide ALL, then listen to chosen */
+        
+        /* Hide ALL */
         nativeSubs.forEach(t=>{ t.mode='hidden'; t.removeEventListener('cuechange',onCue); });
+        
         activeCueTrack=track;
         track.addEventListener('cuechange',onCue);
-        /* mode hidden = browser doesn't render it, but cuechange still fires */
+        
         const lbl=track.label||(track.language&&langName(track.language))||`Sub ${idx+1}`;
         toast(`💬 ${lbl}`);
     } else {
-        /* fetch VTT from server */
-        toast('💬 Loading subtitle…');
-        try{
-            const r=await fetch(`/sub/${FILE_ID}/${idx}.vtt`);
-            if(!r.ok) throw new Error('bad response');
-            const txt=await r.text();
-            subCues=parseVTT(txt);
-            toast(`✅ Subtitles loaded`);
-        } catch(e){
-            subCues=null;
-            toast('⚠️ Subtitle load failed');
-        }
+        /* fetch VTT via browser <track> streaming */
+        toast('💬 Streaming subtitle…');
+        const oldTrack = document.getElementById('remote_sub');
+        if(oldTrack) oldTrack.remove();
+        if(activeCueTrack){ activeCueTrack.removeEventListener('cuechange',onCue); activeCueTrack=null; }
+
+        const tEl = document.createElement('track');
+        tEl.id = 'remote_sub';
+        tEl.kind = 'subtitles';
+        tEl.src = `/sub/${FILE_ID}/${idx}.vtt`;
+        tEl.default = true;
+        vid.appendChild(tEl);
+
+        /* Wait for track to be parsed by browser */
+        tEl.addEventListener('load', ()=>{ toast('✅ Subtitles streaming'); });
+        tEl.addEventListener('error', ()=>{ toast('⚠️ Subtitle stream failed'); });
+
+        /* We need to hook into the newly created TextTrack object on the video */
+        const checkTrack = setInterval(()=>{
+            const trackList = Array.from(vid.textTracks||[]);
+            const match = trackList.find(t=>t.kind==='subtitles' && (!t.label || t.label==='')); // our temp track
+            if(match){
+                clearInterval(checkTrack);
+                match.mode = 'hidden'; // hide default browser renderer
+                activeCueTrack = match;
+                match.addEventListener('cuechange', onCue);
+            }
+        }, 100);
+        setTimeout(()=>clearInterval(checkTrack), 5000); // safety clear
     }
 }
 
@@ -806,36 +828,9 @@ function onCue(){
         : '';
 }
 
-/* ── SUBTITLE OVERLAY (fetch mode) ── */
+/* ── SUBTITLE OVERLAY (fallback) ── */
 function subOverlay(){
-    if(!subCues||subMode!=='fetch'){ return; }
-    const t=vid.currentTime;
-    const c=subCues.find(x=>t>=x.s&&t<=x.e);
-    subTxt.innerHTML = c ? c.t.replace(/\n/g,'<br>') : '';
-}
-
-/* ── VTT PARSER ── */
-function parseVTT(raw){
-    const cues=[];
-    const blocks=raw.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split(/\n{2,}/);
-    for(const blk of blocks){
-        const lines=blk.trim().split('\n');
-        const ai=lines.findIndex(l=>l.includes('-->'));
-        if(ai<0) continue;
-        const [s,e]=lines[ai].split('-->').map(p=>vtime(p.trim().split(/\s/)[0]));
-        if(isNaN(s)||isNaN(e)) continue;
-        const txt=lines.slice(ai+1).join('\n')
-            .replace(/<\d+:\d+:\d+\.\d+>/g,'')
-            .replace(/<c[.\w]*>|<\/c>/g,'')
-            .replace(/<[^>]+>/g,'').trim();
-        if(txt) cues.push({s,e,t:txt});
-    }
-    return cues.sort((a,b)=>a.s-b.s);
-}
-function vtime(s){
-    if(!s) return NaN;
-    const p=s.split(':').map(Number);
-    return p.length===3 ? p[0]*3600+p[1]*60+p[2] : p[0]*60+p[1];
+    // no-op: onCue handles it exclusively now
 }
 function escH(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
