@@ -246,7 +246,7 @@ async def remux_handler(request: web.Request):
         file_url  = urllib.parse.urljoin(Server.URL, f'dl/{path}')
         file_info = await _db.get_file(path)
         raw_name  = (file_info.get('file_name', 'video') if file_info else 'video')
-        file_name = raw_name.rsplit('.', 1)[0] + '.mkv' if '.' in raw_name else raw_name + '.mkv'
+        file_name = raw_name.rsplit('.', 1)[0] + '.mp4' if '.' in raw_name else raw_name + '.mp4'
 
         cmd = ['ffmpeg', '-y']
         # Fast-seek BEFORE -i: FFmpeg translates to HTTP Range on the /dl/ stream.
@@ -257,10 +257,12 @@ async def remux_handler(request: web.Request):
             '-map', '0:v:0',
             '-map', f'0:a:{audio_track}',
             '-c:v', 'copy',                # video: copy (no re-encode)
+            '-tag:v', 'hvc1',              # CRITICAL: makes HEVC readable to browsers
             '-c:a', 'aac',                 # audio: transcode to AAC (EAC3/AC3 -> AAC)
             '-b:a', '192k',
             '-ac', '2',                    # downmix 5.1 -> stereo
-            '-f', 'matroska',
+            '-movflags', 'frag_keyframe+empty_moov+default_base_moof',
+            '-f', 'mp4',
             'pipe:1',
         ]
 
@@ -297,7 +299,7 @@ async def remux_handler(request: web.Request):
         return web.Response(
             body=body_generator(),
             headers={
-                'Content-Type':        'video/x-matroska',
+                'Content-Type':        'video/mp4',
                 'Content-Disposition': f'inline; filename="{file_name}"',
                 'X-Accel-Buffering':   'no',
                 'Cache-Control':       'no-cache',
